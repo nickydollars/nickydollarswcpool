@@ -51,7 +51,6 @@
   .msg.ok{ color:#7ee0a8; } .msg.err{ color:#ff9b8a; }
   .btn-bottom-save{ display:none; }
   .msg-bottom{ display:none; }
-  .btn-bottom-save{ display:none; }
 
   .scrollwrap{ overflow-x:auto; padding:30px 20px 10px; }
   .bracket{ display:grid; grid-template-columns:240px 240px 230px 220px 200px 200px 190px; gap:16px; min-width:1480px; margin:0 auto; }
@@ -315,8 +314,8 @@ const MATCHES = [
   {id:'q3',round:'QF',pts:3,children:['r5','r6']},
   {id:'q4',round:'QF',pts:3,children:['r7','r8']},
 
-  {id:'s1',round:'SF',pts:4,children:['q1','q2']},
-  {id:'s2',round:'SF',pts:4,children:['q3','q4']},
+{id:'s1',round:'SF',pts:4,children:['q1','q3']},
+  {id:'s2',round:'SF',pts:4,children:['q2','q4']},
 
   {id:'third',round:'3RD',pts:5,lose:['s1','s2']},
   {id:'final',round:'FINAL',pts:8,children:['s1','s2']},
@@ -487,7 +486,7 @@ document.getElementById('btnLoad').onclick = async function(){
     Object.assign(myPicks, data.picks);
     renderBracket(bracketPickEl, myPicks, true);
     updateProgress();
-    msg.className='msg ok'; msg.textContent='Loaded your saved bracket' + (data.ts ? (' (saved ' + new Date(data.ts).toLocaleString() + ')') : '') + '.';
+    msg.className='msg ok'; msg.textContent='Loaded your saved bracket' + (data.ts ? (' (saved ' + fmtET(data.ts) + ')') : '') + '.';
   } else {
     msg.className='msg err'; msg.textContent='No saved bracket found for that name + Venmo.';
   }
