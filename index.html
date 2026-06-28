@@ -49,6 +49,7 @@
   .progress{ font-size:13.5px; color:rgba(246,243,234,0.6); font-family:'Oswald',sans-serif; }
   .msg{ max-width:680px; margin:10px auto 0; padding:0 20px; font-size:14px; }
   .msg.ok{ color:#7ee0a8; } .msg.err{ color:#ff9b8a; }
+  .btn-bottom-save{ display:none; }
 
   .scrollwrap{ overflow-x:auto; padding:30px 20px 10px; }
   .bracket{ display:grid; grid-template-columns:240px 240px 230px 220px 200px 200px 190px; gap:16px; min-width:1480px; margin:0 auto; }
@@ -188,7 +189,7 @@
     <div class="bracket" id="bracketPick"></div>
   </div>
 
-  <button class="btn btn-primary btn-bottom-save" id="btnSaveBottom" style="display:none;">Save My Bracket</button>
+  <button class="btn btn-primary btn-bottom-save" id="btnSaveBottom">Save My Bracket</button>
 </div>
 
 <div class="tabpanel" id="tab-board">
@@ -462,7 +463,6 @@ document.getElementById('btnSave').onclick = async function(){
 };
 
 document.getElementById('btnSaveBottom').onclick = document.getElementById('btnSave').onclick;
-document.getElementById('btnLoad').onclick = async function(){
 document.getElementById('btnLoad').onclick = async function(){
   const msg = document.getElementById('saveMsg');
   const name = document.getElementById('inpName').value.trim();
