@@ -50,6 +50,8 @@
   .msg{ max-width:680px; margin:10px auto 0; padding:0 20px; font-size:14px; }
   .msg.ok{ color:#7ee0a8; } .msg.err{ color:#ff9b8a; }
   .btn-bottom-save{ display:none; }
+  .msg-bottom{ display:none; }
+  .btn-bottom-save{ display:none; }
 
   .scrollwrap{ overflow-x:auto; padding:30px 20px 10px; }
   .bracket{ display:grid; grid-template-columns:240px 240px 230px 220px 200px 200px 190px; gap:16px; min-width:1480px; margin:0 auto; }
@@ -103,6 +105,7 @@
     .actionbar .btn{ width:100%; }
     #btnSave{ display:none; }
     .btn-bottom-save{ display:block; width:100%; margin:24px 16px 0; }
+    .msg-bottom{ display:block; max-width:none; width:100%; padding:0 16px; margin:10px auto 0; }
     .progress{ text-align:center; }
 
     .scrollwrap{ overflow-x:hidden; padding:24px 16px 10px; }
@@ -190,6 +193,7 @@
   </div>
 
   <button class="btn btn-primary btn-bottom-save" id="btnSaveBottom">Save My Bracket</button>
+  <div class="msg msg-bottom" id="saveMsgBottom"></div>
 </div>
 
 <div class="tabpanel" id="tab-board">
@@ -393,6 +397,15 @@ function renderBracket(container, picks, editable){
   }
 }
 
+function fmtET(ts){
+  return new Date(ts).toLocaleString('en-US', { timeZone:'America/New_York', dateStyle:'short', timeStyle:'short' }) + ' ET';
+}
+function setSaveMsg(cls, text){
+  const top = document.getElementById('saveMsg');
+  const bottom = document.getElementById('saveMsgBottom');
+  top.className = cls; top.textContent = text;
+  if(bottom){ bottom.className = cls; bottom.textContent = text; }
+}
 function slug(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
 async function storeGet(key, shared){
   try{
@@ -449,17 +462,15 @@ function bracketKey(){
 }
 
 document.getElementById('btnSave').onclick = async function(){
-  const msg = document.getElementById('saveMsg');
   const name = document.getElementById('inpName').value.trim();
   const venmo = document.getElementById('inpVenmo').value.trim();
-  if(!name || !venmo){ msg.className='msg err'; msg.textContent='Enter your name and Venmo handle before saving.'; return; }
+  if(!name || !venmo){ setSaveMsg('msg err', 'Enter your name and Venmo handle before saving.'); return; }
   const done = MATCHES.filter(m=>myPicks[m.id]).length;
-  if(done < TOTAL_MATCHES){ msg.className='msg err'; msg.textContent='Pick all ' + TOTAL_MATCHES + ' matchups first — you have ' + done + ' so far.'; return; }
-  msg.className='msg'; msg.textContent='Saving...';
+  if(done < TOTAL_MATCHES){ setSaveMsg('msg err', 'Pick all ' + TOTAL_MATCHES + ' matchups first — you have ' + done + ' so far.'); return; }
+  setSaveMsg('msg', 'Saving...');
   const now = Date.now();
   const res = await storeSet(bracketKey(), JSON.stringify({name:name, venmo:venmo, picks: myPicks, ts: now}), true);
-  msg.className = res.ok ? 'msg ok' : 'msg err';
-  msg.textContent = res.ok ? ('Saved! "' + name + '" locked in at ' + new Date(now).toLocaleString() + '.') : ('Save failed: ' + res.error);
+  setSaveMsg(res.ok ? 'msg ok' : 'msg err', res.ok ? ('Saved! "' + name + '" locked in at ' + fmtET(now) + '.') : ('Save failed: ' + res.error));
 };
 
 document.getElementById('btnSaveBottom').onclick = document.getElementById('btnSave').onclick;
