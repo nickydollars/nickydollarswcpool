@@ -68,6 +68,9 @@
   .teambtn.picked{ background:#e7f4ec; color:var(--green-ok); }
   .teambtn.picked::after{ content:"✓"; margin-left:auto; font-weight:700; }
   .teambtn:disabled{ color:#b7afa0; cursor:default; font-style:italic; font-weight:500; }
+  .teambtn.locked{ font-style:normal; }
+  .teambtn.locked.picked{ color:var(--green-ok); background:#e7f4ec; }
+  .lock-ico{ margin-left:auto; opacity:.55; font-size:.85em; }
   .round:not(:first-child) .match::before{ content:""; position:absolute; left:-16px; top:50%; width:14px; height:1.5px; background:var(--gold); }
   .champion-col{ display:flex; align-items:center; justify-content:center; }
   .trophy-card{ background:linear-gradient(160deg, var(--gold-bright), var(--gold)); color:var(--navy); border-radius:14px;
@@ -186,6 +189,7 @@
     <span class="progress" id="progressText"></span>
   </div>
   <div class="msg" id="saveMsg"></div>
+  <div class="small" style="text-align:center; margin-top:8px;">🔒 Round of 32, Round of 16, and Quarterfinals are locked from your original submission. Semifinals, 3rd Place, and the Final are open for you to (re)pick.</div>
 
   <div class="scrollwrap">
     <div class="bracket" id="bracketPick"></div>
@@ -332,6 +336,8 @@ const ROUNDS = [
   {label:'Final — 8pts', ids:['final'], rowSpan:16},
 ];
 
+const LOCKED_ROUNDS = ['R32','R16','QF'];
+
 function getTeams(match, picks){
   if(match.home) return [match.home, match.away];
   if(match.children) return [picks[match.children[0]]||null, picks[match.children[1]]||null];
@@ -353,23 +359,25 @@ function cleanPicks(picks){
     if(picks[m.id]!==a && picks[m.id]!==b) delete picks[m.id];
   });
 }
-function teamBtnHTML(matchId, code, picked){
+function teamBtnHTML(matchId, code, picked, locked){
   if(!code) return '<button class="teambtn" disabled>TBD</button>';
   const t = TEAMS[code];
-  return '<button class="teambtn ' + (picked?'picked':'') + '" data-match="' + matchId + '" data-team="' + code + '">' +
-    '<span class="flag">' + t.f + '</span><span>' + t.n + '</span></button>';
+  return '<button class="teambtn ' + (picked?'picked':'') + (locked?' locked':'') + '" ' + (locked?'disabled':'') + ' data-match="' + matchId + '" data-team="' + code + '">' +
+    '<span class="flag">' + t.f + '</span><span>' + t.n + '</span>' + (locked?'<span class="lock-ico">🔒</span>':'') + '</button>';
 }
 function renderBracket(container, picks, editable){
+  const lockRounds = !!container._lockRounds;
   let html = '';
   ROUNDS.forEach(rd=>{
     html += '<div><div class="col-head">' + rd.label + '</div><div class="round">';
     rd.ids.forEach((id,i)=>{
       const m = MBY[id];
       const [a,b] = getTeams(m, picks);
+      const locked = lockRounds && LOCKED_ROUNDS.includes(m.round);
       const start = i*rd.rowSpan+1, end = start+rd.rowSpan;
       html += '<div class="match" style="grid-row:' + start + '/' + end + '">' +
-        teamBtnHTML(id, a, picks[id]===a) +
-        teamBtnHTML(id, b, picks[id]===b) +
+        teamBtnHTML(id, a, picks[id]===a, locked) +
+        teamBtnHTML(id, b, picks[id]===b, locked) +
         '</div>';
     });
     html += '</div></div>';
@@ -440,6 +448,7 @@ async function storeList(prefix, shared){
 const myPicks = {};
 const bracketPickEl = document.getElementById('bracketPick');
 bracketPickEl._onChange = updateProgress;
+bracketPickEl._lockRounds = true;
 renderBracket(bracketPickEl, myPicks, true);
 
 function updateProgress(){
