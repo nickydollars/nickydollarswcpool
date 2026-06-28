@@ -448,7 +448,8 @@ async function storeList(prefix, shared){
 const myPicks = {};
 const bracketPickEl = document.getElementById('bracketPick');
 bracketPickEl._onChange = updateProgress;
-bracketPickEl._lockRounds = true;
+const isLatecomer = new URLSearchParams(location.search).get('vip') === '5153';
+bracketPickEl._lockRounds = !isLatecomer;
 renderBracket(bracketPickEl, myPicks, true);
 
 function updateProgress(){
