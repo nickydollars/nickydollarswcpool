@@ -493,6 +493,7 @@ document.getElementById('btnLoad').onclick = async function(){
     const data = JSON.parse(res.value);
     Object.keys(myPicks).forEach(k=>delete myPicks[k]);
     Object.assign(myPicks, data.picks);
+    cleanPicks(myPicks);
     renderBracket(bracketPickEl, myPicks, true);
     updateProgress();
     msg.className='msg ok'; msg.textContent='Loaded your saved bracket' + (data.ts ? (' (saved ' + fmtET(data.ts) + ')') : '') + '.';
