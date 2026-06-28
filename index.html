@@ -100,6 +100,7 @@
     .entrybar, .actionbar, .panelwrap{ padding:0 16px; max-width:none; width:100%; }
     .actionbar{ flex-direction:column; align-items:stretch; }
     .actionbar .btn{ width:100%; }
+    #btnSave{ order:5; }
     .progress{ text-align:center; }
 
     .scrollwrap{ overflow-x:hidden; padding:24px 16px 10px; }
@@ -389,10 +390,37 @@ function renderBracket(container, picks, editable){
 }
 
 function slug(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
-async function storeGet(key, shared){ try{ return await window.storage.get(key, shared); }catch(e){ return null; } }
-async function storeSet(key, value, shared){ try{ return await window.storage.set(key, value, shared); }catch(e){ return null; } }
-async function storeList(prefix, shared){ try{ return await window.storage.list(prefix, shared); }catch(e){ return null; } }
-
+async function storeGet(key, shared){
+  try{
+    const res = await fetch('/.netlify/functions/kv-get?key=' + encodeURIComponent(key));
+    if(!res.ok) return null;
+    const data = await res.json();
+    return (data.value !== null && data.value !== undefined) ? { value: data.value } : null;
+  } catch(e){ return null; }
+}
+async function storeSet(key, value, shared){
+  try{
+    const res = await fetch('/.netlify/functions/kv-set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key, value: value })
+    });
+    const text = await res.text();
+    let data = null;
+    try{ data = JSON.parse(text); }catch(e){}
+    if(!res.ok) return { ok:false, error: 'HTTP ' + res.status + ': ' + (data && data.error ? data.error : text.slice(0,300)) };
+    if(data && data.ok) return { ok:true };
+    return { ok:false, error: 'Unexpected response: ' + text.slice(0,300) };
+  } catch(e){ return { ok:false, error: 'Network/JS error: ' + e.message }; }
+}
+async function storeList(prefix, shared){
+  try{
+    const res = await fetch('/.netlify/functions/kv-list?prefix=' + encodeURIComponent(prefix));
+    if(!res.ok) return null;
+    const data = await res.json();
+    return { keys: data.keys || [] };
+  } catch(e){ return null; }
+}
 const myPicks = {};
 const bracketPickEl = document.getElementById('bracketPick');
 bracketPickEl._onChange = updateProgress;
@@ -426,8 +454,8 @@ document.getElementById('btnSave').onclick = async function(){
   msg.className='msg'; msg.textContent='Saving...';
   const now = Date.now();
   const res = await storeSet(bracketKey(), JSON.stringify({name:name, venmo:venmo, picks: myPicks, ts: now}), true);
-  msg.className = res ? 'msg ok' : 'msg err';
-  msg.textContent = res ? ('Saved! "' + name + '" locked in at ' + new Date(now).toLocaleString() + '.') : 'Something went wrong saving — try again.';
+  msg.className = res.ok ? 'msg ok' : 'msg err';
+  msg.textContent = res.ok ? ('Saved! "' + name + '" locked in at ' + new Date(now).toLocaleString() + '.') : ('Save failed: ' + res.error);
 };
 
 document.getElementById('btnLoad').onclick = async function(){
@@ -561,9 +589,9 @@ document.getElementById('btnSaveResults').onclick = async function(){
   msg.className='msg'; msg.textContent='Saving official results...';
   const payload = JSON.stringify({picks: officialPicks, updatedAt: Date.now()});
   const res = await storeSet('official:results', payload, true);
-  msg.className = res ? 'msg ok' : 'msg err';
-  msg.textContent = res ? 'Saved. Leaderboard will reflect this on next refresh.' : 'Save failed — try again.';
-  if(res) document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
+  msg.className = res.ok ? 'msg ok' : 'msg err';
+  msg.textContent = res.ok ? 'Saved. Leaderboard will reflect this on next refresh.' : ('Save failed: ' + res.error);
+  if(res.ok) document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
 };
 
 async function refreshLeaderboard(){
